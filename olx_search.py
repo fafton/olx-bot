@@ -24,7 +24,7 @@ TELEGRAM_CHAT_ID = "5197638520"
 API_CPU = "https://www.olx.ua/api/v1/offers/?query=ryzen%205%209600x&currency=UAH&filter_float_price:to=7000"
 MAX_PRICE_CPU = 6800 
 
-API_RAM = "https://www.olx.ua/api/v1/offers/?query=ddr5%2032gb&currency=UAH&filter_float_price:to=10000"
+API_RAM = "https://www.olx.ua/api/v1/offers/?query=ddr5%2032gb&currency=UAH&filter_float_price:to=11500"
 MAX_PRICE_RAM = 11000 
 
 DB_PATH = "sent_links.txt"
