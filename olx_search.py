@@ -2,9 +2,23 @@
 import os
 import time
 import random
+import threading
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
+from flask import Flask
+
+# --- ВЕБ-СЕРВЕР ДЛЯ БЕСПЛАТНОГО ТАРИФА RENDER ---
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run_web():
+    # Render передает порт через переменную окружения PORT
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
 # --- НАСТРОЙКИ УВЕДОМЛЕНИЙ ---
 TELEGRAM_TOKEN = "8815485101:AAGeoPgoecN44D7thqfwpHmcpBya5I7otoo"
@@ -18,9 +32,8 @@ MAX_PRICE_CPU = 6500
 URL_RAM = "https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/komplektuyuschie-i-aksesuary/q-ddr5-32gb/?currency=UAH&search%5Bfilter_float_price:to%5D=10000&search%5Bfilter_enum_subcategory%5D%5B0%5D=moduli-pamyati"
 MAX_PRICE_RAM = 10000 
 
-DB_PATH = os.path.expanduser("~/Documents/sent_links.txt")
+DB_PATH = "sent_links.txt"
 
-# Продвинутая маскировка под реальный браузер Chrome на macOS
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -88,17 +101,15 @@ def clean_price(price_str):
 
 
 def scan_url(url, max_price, item_type, already_sent_links):
-    # Создаем сессию для сохранения куки между запросами
     session = requests.Session()
-    
     try:
         response = session.get(url, headers=HEADERS, timeout=(5, 12))
         
         if response.status_code == 403:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Ошибка 403 при сканировании {item_type}. OLX временно ограничил доступ.")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Ошибка 403 при сканировании {item_type}.")
             return
         elif response.status_code != 200:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Сайт вернул ошибку {response.status_code} при сканировании {item_type}")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Ошибка {response.status_code} при сканировании {item_type}")
             return
 
         soup = BeautifulSoup(response.text, "html.parser")
@@ -131,7 +142,6 @@ def scan_url(url, max_price, item_type, already_sent_links):
 
                 title_lower = title.lower()
                 
-                # Фильтры категорий
                 if item_type == "CPU":
                     if "9600x" not in title_lower and "9600 x" not in title_lower:
                         continue
@@ -159,34 +169,17 @@ def scan_url(url, max_price, item_type, already_sent_links):
 
 
 if __name__ == "__main__":
-    print("Бот-мониторинг запущен (Защита от 403 включена). Остановка: Ctrl + C.")
+    # Запускаем веб-сервер в фоновом потоке для Render
+    threading.Thread(target=run_web, daemon=True).start()
+    
+    print("Бот-мониторинг запущен на сервере.")
     sent_notifications = load_sent_links()
     print(f"Загружено ранее отправленных ссылок: {len(sent_notifications)}")
-    import threading
-from flask import Flask
-
-app = Flask('')
-@app.route('/')
-def home():
-    return "Bot is alive!"
-
-def run_web():
-    app.run(host='0.0.0.0', port=8080)
-
-# Запускаем веб-сервер в отдельном потоке
-threading.Thread(target=run_web).start()
-
+    
     while True:
         print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Начало круга сканирования...")
-        
-        # 1. Сканируем процессоры
         scan_url(URL_CPU, MAX_PRICE_CPU, "CPU", sent_notifications)
-        
-        # Задержка 3-6 секунд перед следующим запросом, чтобы OLX не считал нас ботом
         time.sleep(random.randint(3, 6))
-        
-        # 2. Сканируем оперативную память
         scan_url(URL_RAM, MAX_PRICE_RAM, "RAM", sent_notifications)
-        
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Круг завершен. Засыпаю на 30 минут...")
         time.sleep(1800)
