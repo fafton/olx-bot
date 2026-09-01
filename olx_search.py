@@ -26,11 +26,11 @@ TELEGRAM_CHAT_ID = "5197638520"
 
 # --- НАСТРОЙКИ ДЛЯ ПРОЦЕССОРА ---
 URL_CPU = "https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/komplektuyuschie-i-aksesuary/q-ryzen-5-9600x/?currency=UAH&search%5Bfilter_float_price%3Ato%5D=7000&search%5Bfilter_enum_subcategory%5D%5B0%5D=protsessory"
-MAX_PRICE_CPU = 6500 
+MAX_PRICE_CPU = 6800 
 
 # --- НАСТРОЙКИ ДЛЯ ОПЕРАТИВНОЙ ПАМЯТИ ---
 URL_RAM = "https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/komplektuyuschie-i-aksesuary/q-ddr5-32gb/?currency=UAH&search%5Bfilter_float_price:to%5D=10000&search%5Bfilter_enum_subcategory%5D%5B0%5D=moduli-pamyati"
-MAX_PRICE_RAM = 10000 
+MAX_PRICE_RAM = 11000 
 
 DB_PATH = "sent_links.txt"
 
