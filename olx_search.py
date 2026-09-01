@@ -3,13 +3,12 @@ import os
 import re
 import time
 from datetime import datetime
-import requests
 from bs4 import BeautifulSoup
+from curl_cffi import requests
 
 TELEGRAM_TOKEN = "8815485101:AAGeoPgoecN44D7thqfwpHmcpBya5I7otoo"
 TELEGRAM_CHAT_ID = "5197638520"
 
-# Публичные ссылки поиска OLX
 URL_CPU = "https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/komplektuyuschie-i-aksesuary/q-ryzen-5-9600x/?currency=UAH&search%5Bfilter_float_price%3Ato%5D=6800"
 MAX_PRICE_CPU = 6800 
 
@@ -17,12 +16,6 @@ URL_RAM = "https://www.olx.ua/uk/elektronika/kompyutery-i-komplektuyuschie/kompl
 MAX_PRICE_RAM = 11000 
 
 DB_PATH = "sent_links.txt"
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7",
-}
 
 def load_sent_links():
     if os.path.exists(DB_PATH):
@@ -63,14 +56,15 @@ def clean_price(price_str):
 
 def scan_olx(url, max_price, item_type, already_sent_links):
     try:
-        response = requests.get(url, headers=HEADERS, timeout=15)
+        # impersonate="chrome120" маскирует запрос под реальный браузер Chrome
+        response = requests.get(url, impersonate="chrome120", timeout=15)
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Статус ответа {item_type}: {response.status_code}")
         
         if response.status_code != 200:
             return
 
         soup = BeautifulSoup(response.text, "html.parser")
-        cards = soup.find_all("div", attrs={"data-aria-label": "Оголошення"}) or soup.find_all("div", attrs={"data-testid": "l-card"})
+        cards = soup.find_all("div", attrs={"data-testid": "l-card"}) or soup.find_all("div", attrs={"data-cy": "l-card"})
 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {item_type}: найдено карточек — {len(cards)}")
 
@@ -87,7 +81,6 @@ def scan_olx(url, max_price, item_type, already_sent_links):
             if clean_link in already_sent_links:
                 continue
 
-            # Название
             title_elem = card.find("h4") or card.find("h6") or card.find("h3")
             if not title_elem:
                 continue
@@ -99,7 +92,6 @@ def scan_olx(url, max_price, item_type, already_sent_links):
             if item_type == "RAM" and ("ddr5" not in title_lower and "ддр5" not in title_lower):
                 continue
 
-            # Цена
             price_elem = card.find("p", attrs={"data-testid": "ad-price"}) or card.find("p", string=re.compile(r"грн", re.I))
             if not price_elem:
                 continue
