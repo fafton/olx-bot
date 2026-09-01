@@ -1,30 +1,19 @@
 # -*- coding: utf-8 -*-
 import os
-import time
 import random
-import threading
+import re
+import time
 from datetime import datetime
 import requests
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Bot is alive!"
-
-def run_web():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
 
 TELEGRAM_TOKEN = "8815485101:AAGeoPgoecN44D7thqfwpHmcpBya5I7otoo"
 TELEGRAM_CHAT_ID = "5197638520"
 
-# Прямые запросы к API OLX
-API_CPU = "https://www.olx.ua/api/v1/offers/?query=ryzen%205%209600x&currency=UAH&filter_float_price:to=7000"
+# Обновленные ссылки API с новыми лимитами
+API_CPU = "https://www.olx.ua/api/v1/offers/?query=ryzen%205%209600x&currency=UAH&filter_float_price:to=6800"
 MAX_PRICE_CPU = 6800 
 
-API_RAM = "https://www.olx.ua/api/v1/offers/?query=ddr5%2032gb&currency=UAH&filter_float_price:to=11500"
+API_RAM = "https://www.olx.ua/api/v1/offers/?query=ddr5%2032gb&currency=UAH&filter_float_price:to=11000"
 MAX_PRICE_RAM = 11000 
 
 DB_PATH = "sent_links.txt"
@@ -69,12 +58,12 @@ def scan_api(api_url, max_price, item_type, already_sent_links):
     try:
         response = requests.get(api_url, headers=HEADERS, timeout=10)
         if response.status_code != 200:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Ошибка API OLX: статус {response.status_code}")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] Статус API OLX: {response.status_code}")
             return
 
         data = response.json()
         offers = data.get("data", [])
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] API {item_type}: найдено объявлений — {len(offers)}")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {item_type}: найдено {len(offers)} объявлений.")
 
         for item in offers:
             link = item.get("url")
@@ -84,13 +73,11 @@ def scan_api(api_url, max_price, item_type, already_sent_links):
             title = item.get("title", "")
             title_lower = title.lower()
 
-            # Фильтрация по названию
             if item_type == "CPU" and "9600" not in title_lower:
                 continue
             if item_type == "RAM" and ("ddr5" not in title_lower and "ддр5" not in title_lower):
                 continue
 
-            # Получаем точную цену из JSON
             params = item.get("params", [])
             price = None
             for p in params:
@@ -98,30 +85,19 @@ def scan_api(api_url, max_price, item_type, already_sent_links):
                     price = p.get("value", {}).get("value")
                     break
 
-            if price is None:
-                continue
-
-            print(f"  Чек: {title} | Цена: {price} грн")
-
-            if price <= max_price:
+            if price and price <= max_price:
                 print(f"🎯 Находка [{item_type}]: {title} за {price} грн!")
                 send_telegram_message(title, price, link, item_type)
                 already_sent_links.add(link)
                 save_sent_link(link)
 
     except Exception as e:
-        print(f"Ошибка при запросе к API {item_type}: {e}")
+        print(f"Ошибка сканирования {item_type}: {e}")
 
 if __name__ == "__main__":
-    threading.Thread(target=run_web, daemon=True).start()
-    
-    print("Бот запущен через API OLX.")
-    sent_notifications = load_sent_links()
-    
-    while True:
-        print(f"\n[{datetime.now().strftime('%H:%M:%S')}] --- Старт проверки API ---")
-        scan_api(API_CPU, MAX_PRICE_CPU, "CPU", sent_notifications)
-        time.sleep(random.randint(3, 5))
-        scan_api(API_RAM, MAX_PRICE_RAM, "RAM", sent_notifications)
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] --- Конец проверки. Пауза 30 мин ---")
-        time.sleep(1800)
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Запуск проверки...")
+    sent_links = load_sent_links()
+    scan_api(API_CPU, MAX_PRICE_CPU, "CPU", sent_links)
+    time.sleep(3)
+    scan_api(API_RAM, MAX_PRICE_RAM, "RAM", sent_links)
+    print("Проверка завершена.")
