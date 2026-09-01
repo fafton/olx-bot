@@ -10,8 +10,8 @@ TELEGRAM_TOKEN = "8815485101:AAGeoPgoecN44D7thqfwpHmcpBya5I7otoo"
 TELEGRAM_CHAT_ID = "5197638520"
 
 # Обновленные ссылки API с новыми лимитами
-API_CPU = "https://www.olx.ua/api/v1/offers/?query=ryzen%205%209600x&currency=UAH&filter_float_price:to=6800"
-MAX_PRICE_CPU = 6800 
+API_CPU = "https://www.olx.ua/api/v1/offers/?query=ryzen%205%209600x&currency=UAH&filter_float_price:to=11000"
+MAX_PRICE_CPU = 11000 
 
 API_RAM = "https://www.olx.ua/api/v1/offers/?query=ddr5%2032gb&currency=UAH&filter_float_price:to=11000"
 MAX_PRICE_RAM = 11000 
