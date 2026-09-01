@@ -162,7 +162,20 @@ if __name__ == "__main__":
     print("Бот-мониторинг запущен (Защита от 403 включена). Остановка: Ctrl + C.")
     sent_notifications = load_sent_links()
     print(f"Загружено ранее отправленных ссылок: {len(sent_notifications)}")
-    
+    import threading
+from flask import Flask
+
+app = Flask('')
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run_web():
+    app.run(host='0.0.0.0', port=8080)
+
+# Запускаем веб-сервер в отдельном потоке
+threading.Thread(target=run_web).start()
+
     while True:
         print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Начало круга сканирования...")
         
