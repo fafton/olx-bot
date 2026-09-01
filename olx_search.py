@@ -169,13 +169,16 @@ def scan_url(url, max_price, item_type, already_sent_links):
 
 
 if __name__ == "__main__":
-    # Запускаем веб-сервер в фоновом потоке для Render
-    threading.Thread(target=run_web, daemon=True).start()
+    # 1. Запускаем Flask-сервер строго в ОТДЕЛЬНОМ фоновом потоке
+    server_thread = threading.Thread(target=run_web, daemon=True)
+    server_thread.start()
     
+    # 2. Логируем запуск
     print("Бот-мониторинг запущен на сервере.")
     sent_notifications = load_sent_links()
     print(f"Загружено ранее отправленных ссылок: {len(sent_notifications)}")
     
+    # 3. Основной цикл сканирования
     while True:
         print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Начало круга сканирования...")
         scan_url(URL_CPU, MAX_PRICE_CPU, "CPU", sent_notifications)
