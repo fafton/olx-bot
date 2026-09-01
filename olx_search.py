@@ -101,71 +101,8 @@ def clean_price(price_str):
 
 
 def scan_url(url, max_price, item_type, already_sent_links):
-    session = requests.Session()
-    try:
-        response = session.get(url, headers=HEADERS, timeout=(5, 12))
-        
-        if response.status_code == 403:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Ошибка 403 при сканировании {item_type}.")
-            return
-        elif response.status_code != 200:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Ошибка {response.status_code} при сканировании {item_type}")
-            return
-
-        soup = BeautifulSoup(response.text, "html.parser")
-        cards = soup.find_all(attrs={"data-testid": "l-card"})
-        if not cards:
-            cards = soup.find_all("div", attrs={"data-cy": "l-card"})
-
-        if not cards:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Карточки {item_type} не найдены.")
-            return
-
-        for card in cards:
-            try:
-                link_element = card.find("a", href=True)
-                if not link_element:
-                    continue
-                link = link_element["href"]
-                if link.startswith("/"):
-                    link = "https://www.olx.ua" + link
-
-                clean_link = link.split("?")[0]
-
-                if clean_link in already_sent_links:
-                    continue
-
-                title = "Без названия"
-                title_element = card.find("h6") or card.find("h3") or card.find("h4")
-                if title_element:
-                    title = title_element.text.strip()
-
-                title_lower = title.lower()
-                
-                if item_type == "CPU":
-                    if "9600x" not in title_lower and "9600 x" not in title_lower:
-                        continue
-                elif item_type == "RAM":
-                    if "ddr5" not in title_lower and "ддр5" not in title_lower:
-                        continue
-
-                price_element = card.find(attrs={"data-testid": "ad-price"}) or card.find(attrs={"data-cy": "ad-price"})
-                if not price_element:
-                    continue
-                price_text = price_element.text.strip()
-                numeric_price = clean_price(price_text)
-
-                if numeric_price and numeric_price <= max_price:
-                    print(f"🎯 Найдено [{item_type}]: {title} за {price_text}!")
-                    send_telegram_message(title, price_text, clean_link, item_type)
-                    already_sent_links.add(clean_link)
-                    save_sent_link(clean_link)
-                    
-            except Exception:
-                continue
-
-    except Exception as e:
-        print(f"Ошибка при обработке {item_type}: {e}")
+    print(f"Принудительная тестовая отправка для {item_type}...")
+    send_telegram_message(f"Тестовый {item_type}", "9999 грн", "https://olx.ua", item_type)
 
 
 if __name__ == "__main__":
