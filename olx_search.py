@@ -56,7 +56,6 @@ def clean_price(price_str):
 
 def scan_olx(url, max_price, item_type, already_sent_links):
     try:
-        # impersonate="chrome120" маскирует запрос под реальный браузер Chrome
         response = requests.get(url, impersonate="chrome120", timeout=15)
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Статус ответа {item_type}: {response.status_code}")
         
@@ -87,10 +86,17 @@ def scan_olx(url, max_price, item_type, already_sent_links):
             title = title_elem.text.strip()
             title_lower = title.lower()
 
+            # Фильтр для процессора
             if item_type == "CPU" and "9600" not in title_lower:
                 continue
-            if item_type == "RAM" and ("ddr5" not in title_lower and "ддр5" not in title_lower):
-                continue
+            
+            # Фильтр для оперативной памяти (строго 32 ГБ)
+            if item_type == "RAM":
+                if ("ddr5" not in title_lower and "ддр5" not in title_lower) or "32" not in title_lower:
+                    continue
+                # Исключаем штучные плашки по 16 ГБ и 8 ГБ
+                if "1x16" in title_lower or "16gb" in title_lower or "16 gb" in title_lower or "16гб" in title_lower or "16 гб" in title_lower:
+                    continue
 
             price_elem = card.find("p", attrs={"data-testid": "ad-price"}) or card.find("p", string=re.compile(r"грн", re.I))
             if not price_elem:
